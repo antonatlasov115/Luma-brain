@@ -1,0 +1,8 @@
+[package]
+name = "chemistry_module_v2"
+version = "0.2.0"
+edition = "2021"
+
+[dependencies]
+serde = { workspace = true }
+rand = { workspace = true }

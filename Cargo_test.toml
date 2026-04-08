@@ -1,0 +1,12 @@
+[[bin]]
+name = "test_modules"
+path = "test_modules.rs"
+
+[dependencies]
+brainwave_core = { path = "brainwave_core" }
+speech_module = { path = "speech_module" }
+memory_module = { path = "memory_module" }
+thought_module = { path = "thought_module" }
+chemistry_module = { path = "chemistry_module" }
+wave_analyzer = { path = "wave_analyzer" }
+rand = { workspace = true }
