@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="/src/styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Нейро-Тамагочи</title>
+    <script type="module" src="/src/main.ts" defer></script>
+  </head>
+
+  <body>
+    <div id="app">
+      <header>
+        <h1>🧠 <span id="pet-name">Нейро</span></h1>
+        <div class="stats-mini">
+          <span id="age">0с</span> |
+          <span id="vocab">0 слов</span> |
+          <span id="interactions">0 взаимодействий</span>
+        </div>
+      </header>
+
+      <main>
+        <!-- Питомец -->
+        <section class="pet-display">
+          <div id="pet-ascii" class="ascii-art">
+            <pre>   (^_^)
+   /&gt;  &lt;\
+    | |   </pre>
+          </div>
+          <div id="mood" class="mood">😊 Счастлив</div>
+        </section>
+
+        <!-- Речь питомца -->
+        <section class="speech-bubble" id="speech-container">
+          <div class="speech-content" id="pet-speech">
+            Привет! 👋
+          </div>
+        </section>
+
+        <!-- Основные параметры -->
+        <section class="stats">
+          <div class="stat-bar">
+            <label>🍎 Голод</label>
+            <div class="progress-bar">
+              <div id="hunger-bar" class="progress-fill" style="width: 80%"></div>
+            </div>
+            <span id="hunger-value">80%</span>
+          </div>
+
+          <div class="stat-bar">
+            <label>⚡ Энергия</label>
+            <div class="progress-bar">
+              <div id="energy-bar" class="progress-fill energy" style="width: 100%"></div>
+            </div>
+            <span id="energy-value">100%</span>
+          </div>
+
+          <div class="stat-bar">
+            <label>😊 Счастье</label>
+            <div class="progress-bar">
+              <div id="happiness-bar" class="progress-fill happiness" style="width: 80%"></div>
+            </div>
+            <span id="happiness-value">80%</span>
+          </div>
+
+          <div class="stat-bar">
+            <label>🧠 Стимуляция</label>
+            <div class="progress-bar">
+              <div id="stimulation-bar" class="progress-fill stimulation" style="width: 50%"></div>
+            </div>
+            <span id="stimulation-value">50%</span>
+          </div>
+        </section>
+
+        <!-- Кнопки действий -->
+        <section class="actions">
+          <button id="feed-btn" class="action-btn feed">
+            <span class="icon">🍎</span>
+            <span>Покормить</span>
+          </button>
+          <button id="play-btn" class="action-btn play">
+            <span class="icon">🎮</span>
+            <span>Играть</span>
+          </button>
+          <button id="study-btn" class="action-btn study">
+            <span class="icon">📚</span>
+            <span>Учиться</span>
+          </button>
+          <button id="sleep-btn" class="action-btn sleep">
+            <span class="icon">😴</span>
+            <span>Спать</span>
+          </button>
+        </section>
+
+        <!-- Вкладки -->
+        <section class="tabs">
+          <button class="tab active" data-tab="brain">🌊 Мозг</button>
+          <button class="tab" data-tab="chemistry">🧪 Химия</button>
+          <button class="tab" data-tab="consciousness">🌟 Сознание</button>
+          <button class="tab" data-tab="events">📜 События</button>
+        </section>
+
+        <!-- Контент вкладок -->
+        <section class="tab-content">
+          <!-- Мозговые волны -->
+          <div id="brain-tab" class="tab-panel active">
+            <h3>Мозговые волны</h3>
+            <div class="waves">
+              <div class="wave-item">
+                <span>😴 Delta</span>
+                <div class="wave-bar">
+                  <div id="delta-bar" class="wave-fill" style="width: 20%"></div>
+                </div>
+                <span id="delta-value">20%</span>
+              </div>
+              <div class="wave-item">
+                <span>🧘 Theta</span>
+                <div class="wave-bar">
+                  <div id="theta-bar" class="wave-fill" style="width: 30%"></div>
+                </div>
+                <span id="theta-value">30%</span>
+              </div>
+              <div class="wave-item">
+                <span>😌 Alpha</span>
+                <div class="wave-bar">
+                  <div id="alpha-bar" class="wave-fill" style="width: 25%"></div>
+                </div>
+                <span id="alpha-value">25%</span>
+              </div>
+              <div class="wave-item">
+                <span>🤔 Beta</span>
+                <div class="wave-bar">
+                  <div id="beta-bar" class="wave-fill" style="width: 15%"></div>
+                </div>
+                <span id="beta-value">15%</span>
+              </div>
+              <div class="wave-item">
+                <span>💡 Gamma</span>
+                <div class="wave-bar">
+                  <div id="gamma-bar" class="wave-fill" style="width: 10%"></div>
+                </div>
+                <span id="gamma-value">10%</span>
+              </div>
+            </div>
+            <div class="consciousness-index">
+              💫 Индекс сознания: <span id="consciousness-index">0.75</span>
+            </div>
+          </div>
+
+          <!-- Нейрохимия -->
+          <div id="chemistry-tab" class="tab-panel">
+            <h3>Нейрохимия</h3>
+            <div id="chemistry-list" class="chemistry-list">
+              <!-- Заполняется динамически -->
+            </div>
+          </div>
+
+          <!-- Сознание -->
+          <div id="consciousness-tab" class="tab-panel">
+            <h3>Сознание</h3>
+            <div class="consciousness-info">
+              <div class="consciousness-item">
+                <span>💫 Осознанность:</span>
+                <span id="awareness">0%</span>
+              </div>
+              <div class="consciousness-item">
+                <span>✨ Φ (phi):</span>
+                <span id="phi">0.000</span>
+              </div>
+            </div>
+            <h4>🧠 Активные области мозга</h4>
+            <div id="brain-regions" class="brain-regions">
+              <!-- Заполняется динамически -->
+            </div>
+            <h4>💭 Мысли</h4>
+            <div id="thoughts-list" class="thoughts-list">
+              <!-- Заполняется динамически -->
+            </div>
+          </div>
+
+          <!-- События -->
+          <div id="events-tab" class="tab-panel">
+            <h3>События</h3>
+            <div id="events-list" class="events-list">
+              <!-- Заполняется динамически -->
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

@@ -4,6 +4,7 @@ use memory_module::MemoryModule;
 use thought_module::ThoughtModule;
 use chemistry_module::{ChemistryModule, Neurotransmitter};
 use wave_analyzer::WaveAnalyzer;
+use consciousness_module::{GlobalWorkspace, IITConsciousness, SpatialBrain, Information, InformationSource, BrainRegion};
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
@@ -59,6 +60,11 @@ struct BrainPet {
     chemistry: ChemistryModule,
     wave_analyzer: WaveAnalyzer,
 
+    // Модули сознания
+    global_workspace: GlobalWorkspace,
+    iit_consciousness: IITConsciousness,
+    spatial_brain: SpatialBrain,
+
     // Базовые потребности
     hunger: f64,
     energy: f64,
@@ -99,6 +105,9 @@ impl BrainPet {
             thoughts: ThoughtModule::new(),
             chemistry: ChemistryModule::new(),
             wave_analyzer: WaveAnalyzer::new(100.0, 256),
+            global_workspace: GlobalWorkspace::new(),
+            iit_consciousness: IITConsciousness::new(20),
+            spatial_brain: SpatialBrain::new(),
             hunger: 80.0,
             energy: 100.0,
             happiness: 80.0,
@@ -246,6 +255,36 @@ impl BrainPet {
         // 10. Консолидация и затухание памяти
         self.memory.consolidate_memories(self.age);
         self.memory.decay_memories(self.age);
+
+        // 11. НОВОЕ: Обновить пространственный мозг
+        let chemistry_map: std::collections::HashMap<String, f64> =
+            self.chemistry.levels.clone();
+        self.spatial_brain.update(elapsed, &chemistry_map);
+
+        // 12. НОВОЕ: Подать информацию в глобальное рабочее пространство
+        self.submit_to_consciousness();
+
+        // 13. НОВОЕ: Обновить GNW и проверить осознанность
+        if let Some(conscious_info) = self.global_workspace.update(elapsed) {
+            // Что-то стало осознанным!
+            self.events.push(format!("💫 Осознал: {} {}",
+                conscious_info.source.emoji(),
+                conscious_info.content));
+        }
+
+        // 14. НОВОЕ: Обновить IIT
+        let iit_inputs = vec![
+            self.hunger / 100.0,
+            self.energy / 100.0,
+            self.happiness / 100.0,
+            self.global_workspace.get_awareness_index(),
+            self.spatial_brain.get_global_connectivity(),
+        ];
+        self.iit_consciousness.update_network(&iit_inputs);
+        self.iit_consciousness.calculate_phi();
+
+        // 15. НОВОЕ: Активировать области мозга на основе состояния
+        self.update_brain_regions();
 
         // Автосохранение каждые 30 секунд
         if self.last_save.elapsed().as_secs() >= 30 {
@@ -600,8 +639,9 @@ fn ui(f: &mut Frame, pet: &BrainPet) {
             Constraint::Length(8),   // Питомец
             Constraint::Length(12),  // Параметры
             Constraint::Length(12),  // Волны
-            Constraint::Length(8),   // Химия (НОВОЕ)
-            Constraint::Length(8),   // Мысли (НОВОЕ)
+            Constraint::Length(8),   // Химия
+            Constraint::Length(8),   // Мысли
+            Constraint::Length(10),  // НОВОЕ: Сознание (GNW + IIT + Области)
             Constraint::Min(0),      // События
         ])
         .split(f.area());
@@ -668,11 +708,14 @@ fn ui(f: &mut Frame, pet: &BrainPet) {
     // Мысли (НОВОЕ)
     render_thoughts(f, chunks[5], pet);
 
+    // Сознание (НОВОЕ)
+    render_consciousness(f, chunks[6], pet);
+
     // События и управление
     let bottom_chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-        .split(chunks[6]);
+        .split(chunks[7]);
 
     let events: Vec<ListItem> = pet.events.iter().rev().map(|e| ListItem::new(e.as_str())).collect();
     let events_list = List::new(events).block(Block::default().borders(Borders::ALL).title("События"));
@@ -786,4 +829,150 @@ fn render_thoughts(f: &mut Frame, area: Rect, pet: &BrainPet) {
         .block(Block::default().borders(Borders::ALL).title("💭 Мысли"))
         .style(Style::default().fg(Color::White));
     f.render_widget(widget, area);
+}
+
+fn render_consciousness(f: &mut Frame, area: Rect, pet: &BrainPet) {
+    let mut lines = Vec::new();
+
+    // 1. GNW - текущее содержимое сознания
+    if let Some(content) = pet.global_workspace.get_conscious_content() {
+        lines.push(Line::from(format!("💫 Осознаю: {} {}",
+            content.source.emoji(), content.content)));
+    } else {
+        lines.push(Line::from("💫 Сознание: пусто"));
+    }
+
+    // 2. IIT - Φ индекс
+    let phi = pet.iit_consciousness.phi;
+    let is_conscious = pet.iit_consciousness.is_conscious();
+    let consciousness_marker = if is_conscious { "✨" } else { "○" };
+    lines.push(Line::from(format!("{} Φ (phi): {:.3}", consciousness_marker, phi)));
+
+    // 3. Осознанность
+    let awareness = pet.global_workspace.get_awareness_index();
+    lines.push(Line::from(format!("👁️ Осознанность: {:.0}% {}",
+        awareness * 100.0, create_bar(awareness))));
+
+    // 4. Связность мозга
+    let connectivity = pet.spatial_brain.get_global_connectivity();
+    lines.push(Line::from(format!("🔗 Связность: {:.0}% {}",
+        connectivity * 100.0, create_bar(connectivity))));
+
+    lines.push(Line::from(""));
+
+    // 5. Активные области мозга
+    lines.push(Line::from("🧠 Области мозга:"));
+    for region in BrainRegion::all() {
+        let activation = pet.spatial_brain.get_region_activation(region);
+        if activation > 0.3 {
+            lines.push(Line::from(format!("  {} {}: {:.0}%",
+                region.emoji(), region.name(), activation * 100.0)));
+        }
+    }
+
+    let widget = Paragraph::new(lines)
+        .block(Block::default().borders(Borders::ALL).title("🌟 СОЗНАНИЕ"))
+        .style(Style::default().fg(Color::Cyan));
+    f.render_widget(widget, area);
+}
+
+impl BrainPet {
+    /// Подать информацию в глобальное рабочее пространство
+    fn submit_to_consciousness(&mut self) {
+        // 1. Восприятие (голод, энергия) - ВСЕГДА подавать информацию
+        if self.hunger < 50.0 {
+            let salience = if self.hunger < 30.0 { 0.9 } else { 0.6 };
+            let info = Information::new(
+                InformationSource::Perception,
+                format!("Голод: {:.0}%", self.hunger),
+                salience,
+            );
+            self.global_workspace.submit_information(info);
+        }
+
+        if self.energy < 50.0 {
+            let salience = if self.energy < 20.0 { 0.9 } else { 0.6 };
+            let info = Information::new(
+                InformationSource::Perception,
+                format!("Энергия: {:.0}%", self.energy),
+                salience,
+            );
+            self.global_workspace.submit_information(info);
+        }
+
+        // Всегда подавать информацию о текущем состоянии
+        let info = Information::new(
+            InformationSource::Perception,
+            format!("Состояние: {}", self.get_mood()),
+            0.5,
+        );
+        self.global_workspace.submit_information(info);
+
+        // 2. Эмоции
+        if self.happiness > 80.0 {
+            let info = Information::new(
+                InformationSource::Emotion,
+                "Счастлив!".to_string(),
+                0.7,
+            );
+            self.global_workspace.submit_information(info);
+        } else if self.happiness < 30.0 {
+            let info = Information::new(
+                InformationSource::Emotion,
+                "Грустно...".to_string(),
+                0.6,
+            );
+            self.global_workspace.submit_information(info);
+        }
+
+        // 3. Мысли (если есть недавние)
+        if !self.thoughts.get_recent_thoughts(1).is_empty() {
+            let thought = self.thoughts.get_recent_thoughts(1)[0].clone();
+            let info = Information::new(
+                InformationSource::Thought,
+                thought,
+                0.5,
+            );
+            self.global_workspace.submit_information(info);
+        }
+
+        // 4. Память (если есть важные воспоминания)
+        let (episodic_count, _, _) = self.memory.get_memory_stats();
+        if episodic_count > 0 {
+            let info = Information::new(
+                InformationSource::Memory,
+                "Вспоминаю...".to_string(),
+                0.4,
+            );
+            self.global_workspace.submit_information(info);
+        }
+    }
+
+    /// Обновить активацию областей мозга
+    fn update_brain_regions(&mut self) {
+        // PFC - планирование (зависит от стимуляции)
+        let pfc_activation = self.stimulation / 100.0;
+        self.spatial_brain.set_region_activation(BrainRegion::PrefrontalCortex, pfc_activation);
+
+        // Hippocampus - память (зависит от количества воспоминаний)
+        let (episodic_count, _, _) = self.memory.get_memory_stats();
+        let memory_activation = (episodic_count as f64 / 20.0).min(1.0);
+        self.spatial_brain.set_region_activation(BrainRegion::Hippocampus, memory_activation);
+
+        // Amygdala - эмоции (зависит от счастья)
+        let emotion_activation = if self.happiness > 70.0 || self.happiness < 30.0 {
+            0.8
+        } else {
+            0.4
+        };
+        self.spatial_brain.set_region_activation(BrainRegion::Amygdala, emotion_activation);
+
+        // VTA - награда (зависит от дофамина)
+        let dopamine = self.chemistry.levels.get("Дофамин").unwrap_or(&0.5);
+        self.spatial_brain.set_region_activation(BrainRegion::VTA, *dopamine);
+
+        // Thalamus - интеграция (зависит от общего сознания)
+        let thalamus_activation = self.spectrum.consciousness_index();
+        self.spatial_brain.set_region_activation(BrainRegion::Thalamus, thalamus_activation);
+    }
 }

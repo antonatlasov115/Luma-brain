@@ -10,6 +10,7 @@ memory_module = { path = "../memory_module" }
 thought_module = { path = "../thought_module" }
 chemistry_module = { path = "../chemistry_module" }
 wave_analyzer = { path = "../wave_analyzer" }
+consciousness_module = { path = "../consciousness_module" }
 rand = { workspace = true }
 ratatui = "0.28"
 crossterm = "0.28"
