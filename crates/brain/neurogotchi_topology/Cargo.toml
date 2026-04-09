@@ -7,7 +7,7 @@ edition = "2021"
 rand = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-brainwave_core = { path = "../brainwave_core" }
-token_spike_interface = { path = "../token_spike_interface" }
+brainwave_core = { path = "../../core/brainwave_core" }
+token_spike_interface = { path = "../../interfaces/token_spike_interface" }
 
 [dev-dependencies]

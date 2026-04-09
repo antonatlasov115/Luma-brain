@@ -1,0 +1,18 @@
+[package]
+name = "brainwave_tamagotchi"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+brainwave_core = { path = "../../core/brainwave_core" }
+speech_module = { path = "../../modulation/speech_module" }
+memory_module = { path = "../../modulation/memory_module" }
+thought_module = { path = "../../modulation/thought_module" }
+chemistry_module = { path = "../../modulation/chemistry_module" }
+wave_analyzer = { path = "../../brain/wave_analyzer" }
+consciousness_module = { path = "../../brain/consciousness_module" }
+rand = { workspace = true }
+ratatui = "0.28"
+crossterm = "0.28"
+serde = { workspace = true }
+serde_json = { workspace = true }

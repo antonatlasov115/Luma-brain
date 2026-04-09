@@ -1,18 +1,27 @@
 [workspace]
 members = [
-    "brainwave_core",
-    "speech_module",
-    "memory_module",
-    "thought_module",
-    "chemistry_module",
-    "chemistry_module_v2",
-    "wave_analyzer",
-    "consciousness_module",
-    "brainwave_tamagotchi",
+    # Core
+    "crates/core/brainwave_core",
+
+    # Interfaces
+    "crates/interfaces/token_spike_interface",
+
+    # Brain
+    "crates/brain/neurogotchi_topology",
+    "crates/brain/consciousness_module",
+    "crates/brain/wave_analyzer",
+
+    # Modulation
+    "crates/modulation/neuromodulation",
+    "crates/modulation/chemistry_module",
+    "crates/modulation/chemistry_module_v2",
+    "crates/modulation/speech_module",
+    "crates/modulation/memory_module",
+    "crates/modulation/thought_module",
+
+    # Apps
+    "crates/apps/brainwave_tamagotchi",
     "apps/android/neuro-tamagotchi-mobile/src-tauri",
-    "token_spike_interface",
-    "neurogotchi_topology",
-    "neuromodulation",
 ]
 resolver = "2"
 
