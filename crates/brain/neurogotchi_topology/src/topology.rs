@@ -4,6 +4,7 @@ use crate::layer::{Layer, LayerType, Neuron, NeuronType};
 use crate::connection::{Connection, ConnectionMatrix, ConnectionType};
 use serde::{Deserialize, Serialize};
 use rand::Rng;
+use neuromodulation::NeuromodulationState;
 
 /// Главная структура топологии
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -20,8 +21,12 @@ pub struct NeuroGotchiTopology {
     /// Текущее время симуляции (мс)
     pub current_time: f64,
 
-    /// Нейрохимическая модуляция (дофамин, серотонин, и т.д.)
+    /// Нейрохимическая модуляция (legacy, deprecated)
+    #[deprecated(note = "Use neuromodulation instead")]
     pub modulation: f64,
+
+    /// Состояние нейромодуляции
+    pub neuromodulation: NeuromodulationState,
 }
 
 impl NeuroGotchiTopology {
@@ -156,6 +161,7 @@ impl NeuroGotchiTopology {
             total_neurons,
             current_time: 0.0,
             modulation: 1.0,
+            neuromodulation: NeuromodulationState::new(0.0, 12.0), // Рождение в полдень
         }
     }
 
@@ -281,12 +287,19 @@ impl NeuroGotchiTopology {
     ///
     /// # Алгоритм
     ///
-    /// 1. Вычислить входные токи для всех нейронов
-    /// 2. Обновить состояние нейронов
-    /// 3. Собрать спайки
-    /// 4. Применить STDP к пластичным связям
-    /// 5. Записать спайки в историю
+    /// 1. Обновить нейромодуляцию
+    /// 2. Вычислить входные токи для всех нейронов
+    /// 3. Обновить состояние нейронов с модуляцией
+    /// 4. Собрать спайки
+    /// 5. Применить STDP с модуляцией обучения
+    /// 6. Записать спайки в историю
     pub fn step(&mut self, external_currents: &[f64]) -> Vec<(usize, f64)> {
+        // Шаг 0: Получить текущую активность для нейромодуляции
+        let current_activity = self.get_layer_activities(100.0)
+            .iter()
+            .map(|(_, a)| a)
+            .sum::<f64>() / 5.0; // Средняя активность по всем слоям
+
         // Шаг 1: Вычислить синаптические токи для всех нейронов
         let mut synaptic_currents = vec![0.0; self.total_neurons];
 
@@ -294,14 +307,24 @@ impl NeuroGotchiTopology {
             synaptic_currents[neuron_id] = self.compute_synaptic_current(neuron_id);
         }
 
+        // Получить модификаторы от нейромодуляции
+        let activity_mod = self.neuromodulation.get_activity_modifier();
+        let threshold_mod = self.neuromodulation.get_threshold_modifier();
+        let signal_mod = self.neuromodulation.get_signal_modifier();
+
         // Шаг 2: Обработать все нейроны
         let mut spikes = Vec::new();
 
         for (layer_idx, layer) in self.layers.iter_mut().enumerate() {
             for neuron in &mut layer.neurons {
+                // Пропускаем сенсорный слой во время сна
+                if layer_idx == 0 && self.neuromodulation.is_sleeping() {
+                    continue;
+                }
+
                 // Получить внешний ток (для сенсорного слоя)
                 let external_current = if layer_idx == 0 && neuron.id < external_currents.len() {
-                    external_currents[neuron.id]
+                    external_currents[neuron.id] * signal_mod
                 } else {
                     0.0
                 };
@@ -309,9 +332,19 @@ impl NeuroGotchiTopology {
                 // Получить синаптический ток
                 let synaptic_current = synaptic_currents[neuron.id];
 
+                // Применить модуляцию активности
+                let total_current = (external_current + synaptic_current) * activity_mod;
+
+                // Применить модуляцию порога
+                let modulated_threshold = neuron.threshold * threshold_mod;
+                let original_threshold = neuron.threshold;
+                neuron.threshold = modulated_threshold;
+
                 // Обработать нейрон
-                let total_current = external_current + synaptic_current;
                 let fired = neuron.process(total_current, self.modulation);
+
+                // Восстановить порог
+                neuron.threshold = original_threshold;
 
                 if fired {
                     neuron.record_spike(self.current_time);
@@ -320,12 +353,32 @@ impl NeuroGotchiTopology {
             }
         }
 
-        // Шаг 3: Применить STDP
+        // Шаг 3: Применить STDP с модуляцией обучения
         if !spikes.is_empty() {
+            let learning_mod = self.neuromodulation.get_learning_modifier();
+
+            // Применяем модуляцию к скорости обучения всех связей
+            for conn in &mut self.connections.connections {
+                if !conn.weight.is_innate {
+                    let original_lr = conn.weight.learning_rate;
+                    conn.weight.learning_rate = original_lr * learning_mod;
+                }
+            }
+
             self.connections.apply_stdp_batch(&spikes);
+
+            // Восстанавливаем оригинальные скорости обучения
+            for conn in &mut self.connections.connections {
+                if !conn.weight.is_innate {
+                    conn.weight.learning_rate /= learning_mod;
+                }
+            }
         }
 
-        // Шаг 4: Обновить время
+        // Шаг 4: Обновить нейромодуляцию
+        self.neuromodulation.update(self.current_time, spikes.len(), current_activity);
+
+        // Шаг 5: Обновить время
         self.current_time += 1.0;
 
         spikes
@@ -405,6 +458,41 @@ impl NeuroGotchiTopology {
             avg_weight,
             current_time: self.current_time,
         }
+    }
+
+    /// Получить статус нейромодуляции
+    pub fn get_neuromodulation_status(&self) -> String {
+        self.neuromodulation.get_status(self.current_time)
+    }
+
+    /// Выброс дофамина (награда)
+    pub fn reward(&mut self, amount: f64) {
+        self.neuromodulation.modulators.reward(amount);
+    }
+
+    /// Выброс кортизола (стресс)
+    pub fn stress(&mut self, amount: f64) {
+        self.neuromodulation.modulators.stress(amount);
+    }
+
+    /// Изменение настроения
+    pub fn mood_shift(&mut self, amount: f64) {
+        self.neuromodulation.modulators.mood_shift(amount);
+    }
+
+    /// Проверить, спит ли сейчас
+    pub fn is_sleeping(&self) -> bool {
+        self.neuromodulation.is_sleeping()
+    }
+
+    /// Получить уровень усталости (0.0 - 1.0)
+    pub fn get_fatigue_level(&self) -> f64 {
+        self.neuromodulation.adenosine.get_fatigue_level()
+    }
+
+    /// Получить эмоциональное состояние (-1.0 до 1.0)
+    pub fn get_emotional_valence(&self) -> f64 {
+        self.neuromodulation.modulators.get_emotional_valence()
     }
 }
 
