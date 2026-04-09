@@ -9,8 +9,11 @@ members = [
     "wave_analyzer",
     "consciousness_module",
     "brainwave_tamagotchi",
-    "apps/android/neuro-tamagotchi-mobile/src-tauri"
-, "token_spike_interface", "neurogotchi_topology"]
+    "apps/android/neuro-tamagotchi-mobile/src-tauri",
+    "token_spike_interface",
+    "neurogotchi_topology",
+    "neuromodulation",
+]
 resolver = "2"
 
 [workspace.dependencies]
